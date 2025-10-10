@@ -1,11 +1,6 @@
--- Cr�ation de la base
 CREATE DATABASE Gestion_Flex_Stocks;
 USE Gestion_Flex_Stocks;
 
-
--- ----------------------------
--- Table BENEFICIAIRE
--- ----------------------------
 CREATE TABLE Beneficiaire (
    ID_BENEFICIAIRE INT IDENTITY(1,1) PRIMARY KEY,
    Nom VARCHAR(50),
@@ -16,9 +11,6 @@ CREATE TABLE Beneficiaire (
 );
 GO
 
--- ----------------------------
--- Table PRODUIT
--- ----------------------------
 CREATE TABLE Produit (
    ID_Produit INT IDENTITY(1,1) PRIMARY KEY,
    Designation_Produit VARCHAR(50),
@@ -27,9 +19,6 @@ CREATE TABLE Produit (
 );
 GO
 
--- ----------------------------
--- Table FOURNISSEUR
--- ----------------------------
 CREATE TABLE Fournisseur (
    ID_Fournisseur INT IDENTITY(1,1) PRIMARY KEY,
    Nom VARCHAR(50),
@@ -40,9 +29,6 @@ CREATE TABLE Fournisseur (
 );
 GO
 
--- ----------------------------
--- Table USERS
--- ----------------------------
 CREATE TABLE Users (
    ID_user INT IDENTITY(1,1) PRIMARY KEY,
    Username VARCHAR(50) NOT NULL,
@@ -52,9 +38,6 @@ CREATE TABLE Users (
 );
 GO
 
--- ----------------------------
--- Table BON DE COMMANDE
--- ----------------------------
 CREATE TABLE Bon_de_commande (
    ID_BDC INT IDENTITY(1,1) PRIMARY KEY,
    Date_Commande VARCHAR(50),
@@ -64,9 +47,6 @@ CREATE TABLE Bon_de_commande (
 );
 GO
 
--- ----------------------------
--- Table BON DE LIVRAISON
--- ----------------------------
 CREATE TABLE Bon_de_livraison (
    ID_BonDeLivraison INT IDENTITY(1,1) PRIMARY KEY,
    Date_Livraison VARCHAR(50),
@@ -81,9 +61,6 @@ CREATE TABLE Bon_de_livraison (
 );
 GO
 
--- ----------------------------
--- Table BON DE SORTIE
--- ----------------------------
 CREATE TABLE Bon_de_sortie (
    ID_BonS INT IDENTITY(1,1) PRIMARY KEY,
    Date_sortie VARCHAR(50),
@@ -93,9 +70,6 @@ CREATE TABLE Bon_de_sortie (
 );
 GO
 
--- ----------------------------
--- Table BON D'AFFECTATION
--- ----------------------------
 CREATE TABLE Bon_d_affectation (
    ID_BonAff INT IDENTITY(1,1) PRIMARY KEY,
    Date_affectation VARCHAR(50),
@@ -105,9 +79,6 @@ CREATE TABLE Bon_d_affectation (
 );
 GO
 
--- ----------------------------
--- Table FACTURE
--- ----------------------------
 CREATE TABLE Facture (
    ID_Facture INT IDENTITY(1,1) PRIMARY KEY,
    Date_Facture VARCHAR(50),
@@ -121,9 +92,6 @@ CREATE TABLE Facture (
 );
 GO
 
--- ----------------------------
--- Table apparaitre01 (Livraison)
--- ----------------------------
 CREATE TABLE apparaitre01 (
    ID_Produit INT,
    ID_BonDeLivraison INT,
@@ -136,9 +104,6 @@ CREATE TABLE apparaitre01 (
 );
 GO
 
--- ----------------------------
--- Table apparaitre02 (Sortie)
--- ----------------------------
 CREATE TABLE apparaitre02 (
    ID_Produit INT,
    ID_BonS INT,
@@ -151,9 +116,6 @@ CREATE TABLE apparaitre02 (
 );
 GO
 
--- ----------------------------
--- Table apparaitre03 (Affectation)
--- ----------------------------
 CREATE TABLE apparaitre03 (
    ID_Produit INT,
    ID_BonAff INT,
@@ -166,9 +128,6 @@ CREATE TABLE apparaitre03 (
 );
 GO
 
--- ----------------------------
--- Table apparaitre04 (Commande)
--- ----------------------------
 CREATE TABLE apparaitre04 (
    ID_Produit INT,
    ID_BDC INT,
