@@ -439,9 +439,9 @@ begin
         if MessageDlg('Supprimer ce Bon de commande ?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
           DataModule2.BonCommande.Delete;
 
-    3: // Bon d�affectation
+    3: // Bon d'affectation
       if not DataModule2.BonAffectation.IsEmpty then
-        if MessageDlg('Supprimer ce Bon d�affectation ?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+        if MessageDlg('Supprimer ce Bon d''affectation ?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
           DataModule2.BonAffectation.Delete;
   else
     ShowMessage('Veuillez s�lectionner un type de bon dans la liste.');
@@ -460,7 +460,7 @@ begin
     Exit;
   end;
 
-  // 🔒 Hachage du mot de passe avant la comparaison
+  // Hachage du mot de passe avant la comparaison
   hashedPassword := THashSHA2.GetHashString(edtPassword.Text);
 
   // Vérification des identifiants dans la base USERS
@@ -536,7 +536,7 @@ begin
     Exit;
   end;
 
-  //Hachage du mot de passe avant insertion
+  // Hachage du mot de passe avant insertion
   hashedPassword := THashSHA2.GetHashString(edtRPassword.Text);
 
   // Insertion du nouvel utilisateur
@@ -670,9 +670,8 @@ var
   bgColor: TColor;
   v: Variant;
 begin
-  // Vérifier qu'on dessine bien une cellule et que c'est la colonne "Quantité_en_stock"
+  // Vérifier qu'on dessine bien une cellule
   if (AViewInfo.GridRecord <> nil) then
-     //(AViewInfo.Item = cxGrid1DBTableView1Quantite_en_stock) then
   begin
     // Récupération de la valeur de la cellule
     v := AViewInfo.GridRecord.Values[cxGrid1DBTableView1Quantite_en_stock.Index];
