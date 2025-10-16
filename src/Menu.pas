@@ -29,9 +29,9 @@ uses
   cxStyles, cxCustomData, cxFilter, cxData, cxDataStorage, cxNavigator,
   dxDateRanges, dxScrollbarAnnotations, cxDBData, cxGridCustomTableView,
   cxGridTableView, cxGridDBTableView, cxGridLevel, cxClasses, cxGridCustomView,
-  cxGrid, Vcl.WinXCtrls, System.UITypes;
+  cxGrid, Vcl.WinXCtrls, System.UITypes, dxGDIPlusClasses, IdHash, IdHashSHA, IdGlobal, System.Hash;
 
-type
+ type
   TForm1 = class(TForm)
     SkAnimatedImage1: TSkAnimatedImage;
     PageControl1: TPageControl;
@@ -343,10 +343,11 @@ type
       ACanvas: TcxCanvas; AViewInfo: TcxGridTableDataCellViewInfo;
       var ADone: Boolean);
     procedure AdvToolButton10Click(Sender: TObject);
+    procedure AdvToolButton11Click(Sender: TObject);
   private
-    { D�clarations priv�es }
+    { Déclarations privées }
   public
-    { D�clarations publiques }
+    { Déclarations publiques }
   end;
 
 var
@@ -356,23 +357,55 @@ implementation
 
 {$R *.dfm}
 
-uses Code, Unit2;
+uses Code, Box;
+
+//Hash implementation
+function HashSHA256(const Texte: string): string;
+var
+  SHA256: TIdHashSHA256;
+begin
+  SHA256 := TIdHashSHA256.Create;
+  try
+    Result := SHA256.HashStringAsHex(Texte, IndyTextEncoding_UTF8);
+  finally
+    SHA256.Free;
+  end;
+end;
 
 procedure TForm1.AdvToolButton10Click(Sender: TObject);
 begin
-  // Passer en mode Append avant d'ouvrir Form2
+  //Mode Append
   DataModule2.Produit.Append;
-
   Form2 := TForm2.Create(Self);
   try
+    form2.AdvPageControl1.ActivePage := advtabsheet1;
     if Form2.ShowModal = mrOk then
     begin
-      // L'enregistrement est d�j� post�, on peut rafra�chir
       cxGrid1DBTableView1.DataController.DataSource.DataSet.Refresh;
     end
     else
     begin
-      // Annuler l'append si l'utilisateur a annul�
+      if DataModule2.Produit.State in [dsInsert, dsEdit] then
+        DataModule2.Produit.Cancel;
+    end;
+  finally
+    Form2.Free;
+  end;
+end;
+
+procedure TForm1.AdvToolButton11Click(Sender: TObject);
+begin
+  //Mode Edit
+  DataModule2.Produit.edit;
+  Form2 := TForm2.Create(Self);
+  try
+    form2.AdvPageControl1.ActivePage := advtabsheet1;
+    if Form2.ShowModal = mrOk then
+    begin
+      cxGrid1DBTableView1.DataController.DataSource.DataSet.Refresh;
+    end
+    else
+    begin
       if DataModule2.Produit.State in [dsInsert, dsEdit] then
         DataModule2.Produit.Cancel;
     end;
@@ -416,8 +449,10 @@ begin
 end;
 
 procedure TForm1.AdvToolButton1Click(Sender: TObject);
+var
+  hashedPassword: string;
 begin
-  // V�rification si les champs sont remplis
+  // Vérification si les champs sont remplis
   if (edtUsername.Text = '') or (edtPassword.Text = '') then
   begin
     Label5.Caption := 'Veuillez remplir tous les champs.';
@@ -425,19 +460,22 @@ begin
     Exit;
   end;
 
-  // V�rification des identifiants dans la base USERS
+  // 🔒 Hachage du mot de passe avant la comparaison
+  hashedPassword := THashSHA2.GetHashString(edtPassword.Text);
+
+  // Vérification des identifiants dans la base USERS
   DataModule2.USERS.Close;
   DataModule2.USERS.SQL.Text := 'SELECT * FROM USERS WHERE Username = :user AND Password = :pass';
   DataModule2.USERS.Parameters.ParamByName('user').Value := edtUsername.Text;
-  DataModule2.USERS.Parameters.ParamByName('pass').Value := edtPassword.Text;
+  DataModule2.USERS.Parameters.ParamByName('pass').Value := hashedPassword;
   DataModule2.USERS.Open;
 
   if not DataModule2.USERS.Eof then
   begin
-  PageControl1.ActivePage := PageControl1.Pages[1];
-  Timer1.Enabled := True;
-  Label12.Caption := DataModule2.USERS.FieldByName('Username').AsString;
-  Label14.Caption := 'Bienvenue dans votre espace personnel, ' + DataModule2.USERS.FieldByName('Username').AsString;
+    PageControl1.ActivePage := PageControl1.Pages[1];
+    Timer1.Enabled := True;
+    Label12.Caption := DataModule2.USERS.FieldByName('Username').AsString;
+    Label14.Caption := 'Bienvenue dans votre espace personnel, ' + DataModule2.USERS.FieldByName('Username').AsString;
   end
   else
   begin
@@ -466,48 +504,53 @@ PageControl1.ActivePage := Tabsheet2;
 end;
 
 procedure TForm1.AdvToolButton3Click(Sender: TObject);
+var
+  hashedPassword: string;
 begin
-// V�rification si les champs sont remplis
-if (edtRUsername.Text = '') or (edtRPassword.Text = '') or (edtRPasswordV.Text = '') then
-begin
-  Label11.Caption := 'Veuillez remplir tous les champs.';
-  Label11.Visible := True;
-  Exit;
-end;
+  // Vérification si les champs sont remplis
+  if (edtRUsername.Text = '') or (edtRPassword.Text = '') or (edtRPasswordV.Text = '') then
+  begin
+    Label11.Caption := 'Veuillez remplir tous les champs.';
+    Label11.Visible := True;
+    Exit;
+  end;
 
-// V�rification si l'utilisateur existe d�j�
-DataModule2.USERS.Close;
-DataModule2.USERS.SQL.Text := 'SELECT * FROM USERS WHERE Username = :user';
-DataModule2.USERS.Parameters.ParamByName('user').Value := edtRUsername.Text;
-DataModule2.USERS.Open;
+  // Vérification si l'utilisateur existe déjà
+  DataModule2.USERS.Close;
+  DataModule2.USERS.SQL.Text := 'SELECT * FROM USERS WHERE Username = :user';
+  DataModule2.USERS.Parameters.ParamByName('user').Value := edtRUsername.Text;
+  DataModule2.USERS.Open;
 
-if not DataModule2.USERS.Eof then
-begin
-  Label11.Caption := 'Nom d''utilisateur d�j� existant.';
-  Label11.Visible := True;
-  Exit;
-end;
+  if not DataModule2.USERS.Eof then
+  begin
+    Label11.Caption := 'Nom d''utilisateur déjà existant.';
+    Label11.Visible := True;
+    Exit;
+  end;
 
-// V�rification que les deux mots de passe correspondent
-if edtRPassword.Text <> edtRPasswordV.Text then
-begin
-  Label11.Caption := 'Les mots de passe ne correspondent pas.';
-  Label11.Visible := True;
-  Exit;
-end;
+  // Vérification que les deux mots de passe correspondent
+  if edtRPassword.Text <> edtRPasswordV.Text then
+  begin
+    Label11.Caption := 'Les mots de passe ne correspondent pas.';
+    Label11.Visible := True;
+    Exit;
+  end;
 
-// Insertion du nouvel utilisateur
-DataModule2.USERS.Close;
-DataModule2.USERS.SQL.Text := 'INSERT INTO USERS (Username, Password) VALUES (:user, :pass)';
-DataModule2.USERS.Parameters.ParamByName('user').Value := edtRUsername.Text;
-DataModule2.USERS.Parameters.ParamByName('pass').Value := edtRPassword.Text;
-DataModule2.USERS.ExecSQL;
+  //Hachage du mot de passe avant insertion
+  hashedPassword := THashSHA2.GetHashString(edtRPassword.Text);
 
-// Donner acc�s apr�s inscription
-PageControl1.ActivePage := PageControl1.Pages[1];
-Timer1.Enabled := True;
-Label12.Caption := edtRUsername.Text;
-Label14.Caption := 'Bienvenue dans votre espace personnel, ' + edtRUsername.Text;
+  // Insertion du nouvel utilisateur
+  DataModule2.USERS.Close;
+  DataModule2.USERS.SQL.Text := 'INSERT INTO USERS (Username, Password) VALUES (:user, :pass)';
+  DataModule2.USERS.Parameters.ParamByName('user').Value := edtRUsername.Text;
+  DataModule2.USERS.Parameters.ParamByName('pass').Value := hashedPassword;
+  DataModule2.USERS.ExecSQL;
+
+  // Donner accès après inscription
+  PageControl1.ActivePage := PageControl1.Pages[1];
+  Timer1.Enabled := True;
+  Label12.Caption := edtRUsername.Text;
+  Label14.Caption := 'Bienvenue dans votre espace personnel, ' + edtRUsername.Text;
 end;
 
 procedure TForm1.AdvToolButton4Click(Sender: TObject);
@@ -542,7 +585,7 @@ end;
 
 procedure TForm1.BtnResetClick(Sender: TObject);
 begin
-// V�rification si les champs sont remplis
+// Vérification si les champs sont remplis
   if (edtAdminUser.Text = '') or (edtAdminPass.Text = '') or
      (edtTargetUser.Text = '') or (edtNewPass.Text = '') then
   begin
@@ -551,7 +594,7 @@ begin
     Exit;
   end;
 
-  // V�rification si l'admin est valide et approuv�
+  // Vérification si l'admin est valide et approuv�
   DataModule2.Users.Close;
   DataModule2.Users.SQL.Text :=
     'SELECT * FROM Users WHERE Username = :user AND Password = :pass ' +
@@ -562,12 +605,12 @@ begin
 
   if DataModule2.Users.Eof then
   begin
-    LabelReset.Caption := 'Acc�s refus� : seul un administrateur approuv� peut r�initialiser les mots de passe.';
+    LabelReset.Caption := 'Accés refusé : seul un administrateur approuvé peut réinitialiser les mots de passe.';
     LabelReset.Visible := True;
     Exit;
   end;
 
-  // V�rifier que l�utilisateur cible existe
+  // Vérifier que l'utilisateur cible existe
   DataModule2.Users.Close;
   DataModule2.Users.SQL.Text :=
     'SELECT * FROM Users WHERE Username = :target';
@@ -581,7 +624,7 @@ begin
     Exit;
   end;
 
-  // Mise � jour du mot de passe
+  // Mise à jour du mot de passe
   DataModule2.Users.Close;
   DataModule2.Users.SQL.Text :=
     'UPDATE Users SET Password = :newpass WHERE Username = :target';
@@ -589,7 +632,7 @@ begin
   DataModule2.Users.Parameters.ParamByName('target').Value := edtTargetUser.Text;
   DataModule2.Users.ExecSQL;
 
-  LabelReset.Caption := 'Mot de passe r�initialis� avec succ�s.';
+  LabelReset.Caption := 'Mot de passe réinitialisé avec succés.';
   LabelReset.Visible := True;
 end;
 
@@ -627,39 +670,39 @@ var
   bgColor: TColor;
   v: Variant;
 begin
-  if AViewInfo.GridRecord <> nil then
+  // Vérifier qu'on dessine bien une cellule et que c'est la colonne "Quantité_en_stock"
+  if (AViewInfo.GridRecord <> nil) then
+     //(AViewInfo.Item = cxGrid1DBTableView1Quantite_en_stock) then
   begin
-    // R�cup�rer la quantit� du produit en g�rant les NULL/Variant
+    // Récupération de la valeur de la cellule
     v := AViewInfo.GridRecord.Values[cxGrid1DBTableView1Quantite_en_stock.Index];
     if VarIsNull(v) then
       Qty := 0
     else
-      Qty := v; // variant contenant un entier ou convertible
+      Qty := v;
 
-    // D�terminer la couleur selon la quantit� (pastel)
+    // Couleurs pastel très légères (texte noir lisible)
     if Qty = 0 then
-      bgColor := RGB(255, 102, 102)     // rouge pastel
+      bgColor := RGB(255, 204, 204)     // rouge très clair
     else if Qty < 3 then
-      bgColor := RGB(255, 178, 102)     // orange pastel
+      bgColor := RGB(255, 229, 204)     // orange très clair
     else if Qty < 10 then
-      bgColor := RGB(255, 255, 153)     // jaune pastel
+      bgColor := RGB(255, 255, 204)     // jaune très clair
     else
-      bgColor := RGB(204, 255, 204);    // vert pastel
+      bgColor := RGB(224, 255, 224);    // vert très clair
 
-    // Appliquer la couleur de fond � la cellule courante
+    // Dessiner le fond
     ACanvas.Brush.Color := bgColor;
     ACanvas.FillRect(AViewInfo.Bounds);
 
-    // D�terminer la couleur du texte
-    if (Qty = 0) or (Qty < 3) then
-      ACanvas.Font.Color := clWhite      // texte clair sur rouge/orange
-    else
-      ACanvas.Font.Color := clBlack;     // texte noir sur jaune/vert
+    // Couleur du texte : toujours noir (plus lisible)
+    ACanvas.Font.Color := clBlack;
 
     // Laisser cxGrid dessiner le texte normalement
     ADone := False;
   end;
 end;
+
 
 procedure TForm1.edtAdminPassKeyPress(Sender: TObject; var Key: Char);
 begin
@@ -769,17 +812,22 @@ LabelDate.Caption := FormatDateTime('dddd d mmmm', Date);
     DataModule2.Users.Open;
 
     if DataModule2.Users.FieldByName('Cnt').AsInteger = 0 then
-    begin
-      // Ins�rer admin/admin avec droits admin
-      DataModule2.Users.Close;
-      DataModule2.Users.SQL.Text :=
-        'INSERT INTO Users (Username, Password, IsAdmin, IsApproved) ' +
-        'VALUES (''admin'', ''admin'', 1, 1)';
-      DataModule2.Users.ExecSQL;
+  begin
+    //Création d’un mot de passe haché pour "admin"
+    var hashedPassword := THashSHA2.GetHashString('admin');
 
-      Label5.Caption := 'Utilisateur par d�faut cr�� : admin/admin.';
-      Label5.Visible := True;
-    end;
+    // Insertion de l’utilisateur admin par défaut
+    DataModule2.Users.Close;
+    DataModule2.Users.SQL.Text :=
+      'INSERT INTO Users (Username, Password, IsAdmin, IsApproved) ' +
+      'VALUES (:u, :p, 1, 1)';
+    DataModule2.Users.Parameters.ParamByName('u').Value := 'admin';
+    DataModule2.Users.Parameters.ParamByName('p').Value := hashedPassword;
+    DataModule2.Users.ExecSQL;
+
+    Label5.Caption := 'Utilisateur par défaut créé : admin / admin.';
+    Label5.Visible := True;
+  end;
 
   except
     on E: Exception do

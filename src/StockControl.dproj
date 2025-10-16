@@ -135,10 +135,9 @@
         </DCCReference>
         <DCCReference Include="Code.pas">
             <Form>DataModule2</Form>
-            <FormType>dfm</FormType>
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
-        <DCCReference Include="Unit2.pas">
+        <DCCReference Include="Box.pas">
             <Form>Form2</Form>
             <FormType>dfm</FormType>
         </DCCReference>
